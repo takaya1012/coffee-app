@@ -1,853 +1,820 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RoastNote - コーヒー焙煎ログアプリ</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Inter & Noto Sans JP Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', 'Noto Sans JP', sans-serif;
-      background-color: #f8f6f0;
-      color: #2c221e;
-    }
-    .roast-bg {
-      background-color: #2c221e;
-    }
-    .accent-amber {
-      color: #d97706;
-    }
-    .bg-accent-amber {
-      background-color: #d97706;
-    }
-    .border-accent-amber {
-      border-color: #d97706;
-    }
-    /* カスタムスクロールバー */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #f1ebd9;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #c5b497;
-      border-radius: 4px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RoastNote - コーヒー焙煎ログ</title>
+<!-- PWA & ホーム画面追加用メタタグ -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RoastNote">
+<link rel="apple-touch-icon" href="https://placehold.co/180x180/78350f/fef3c7?text=☕">
+<link rel="icon" type="image/png" href="https://placehold.co/32x32/78350f/fef3c7?text=☕">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<!-- Google Fonts: Inter & Noto Sans JP -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body {
+font-family: 'Noto Sans JP', sans-serif;
+overflow-x: hidden;
+}
+.font-mono-num {
+font-family: 'Plus Jakarta Sans', monospace;
+}
+input, select, textarea {
+box-sizing: border-box;
+max-width: 100%;
+}
+</style>
 </head>
-<body class="min-h-screen flex flex-col pb-12">
-
-  <!-- ヘッダー -->
-  <header class="roast-bg text-amber-50 shadow-md sticky top-0 z-30">
-    <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <div class="p-2 bg-amber-600 rounded-lg text-white">
-          <i data-lucide="flame" class="w-6 h-6"></i>
-        </div>
-        <div>
-          <h1 class="text-xl font-bold tracking-tight">RoastNote</h1>
-          <p class="text-xs text-amber-200/80">コーヒー焙煎記録・プロファイル管理</p>
-        </div>
-      </div>
-      <button id="openNewLogBtn" class="flex items-center space-x-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-sm text-sm">
-        <i data-lucide="plus" class="w-4 h-4"></i>
-        <span>新規ログ作成</span>
-      </button>
-    </div>
-  </header>
-
-  <main class="max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
-    <!-- ステータス & 検索バー -->
-    <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center">
-      <!-- 検索・フィルター -->
-      <div class="relative flex-1">
-        <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-amber-800/50"></i>
-        <input type="text" id="searchInput" placeholder="豆の名前、産地、焙煎度などで検索..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-amber-200 bg-white focus:outline-none focus:ring-2 focus:ring-amber-600/50 text-sm shadow-sm">
-      </div>
-      
-      <!-- 焙煎度フィルターボタン -->
-      <div class="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 text-sm">
-        <button data-filter="all" class="filter-btn bg-amber-900 text-amber-50 px-3 py-1.5 rounded-lg font-medium text-xs whitespace-nowrap shadow-sm">すべて</button>
-        <button data-filter="浅煎り" class="filter-btn bg-white text-amber-900 border border-amber-200 hover:bg-amber-50 px-3 py-1.5 rounded-lg font-medium text-xs whitespace-nowrap">浅煎り</button>
-        <button data-filter="中煎り" class="filter-btn bg-white text-amber-900 border border-amber-200 hover:bg-amber-50 px-3 py-1.5 rounded-lg font-medium text-xs whitespace-nowrap">中煎り</button>
-        <button data-filter="深煎り" class="filter-btn bg-white text-amber-900 border border-amber-200 hover:bg-amber-50 px-3 py-1.5 rounded-lg font-medium text-xs whitespace-nowrap">深煎り</button>
-      </div>
-    </div>
-
-    <!-- ログ一覧コンテナ -->
-    <div id="logsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- カードが動的に描画されます -->
-    </div>
-
-    <!-- 空の状態メッセージ -->
-    <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center text-amber-900/60">
-      <div class="p-4 bg-amber-100 rounded-full mb-3">
-        <i data-lucide="coffee" class="w-10 h-10 text-amber-800"></i>
-      </div>
-      <h3 class="text-lg font-semibold text-amber-950 mb-1">焙煎記録が見つかりません</h3>
-      <p class="text-sm max-w-sm mb-4">新しい焙煎の記録を追加して、自分だけのコーヒーノートを作成しましょう！</p>
-      <button id="emptyNewLogBtn" class="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
-        最初のログを記録する
-      </button>
-    </div>
-  </main>
-
-  <!-- ログ作成/編集 モーダル -->
-  <div id="logModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 opacity-0 pointer-events-none transition-opacity duration-300 p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
-      <!-- モーダルヘッダー -->
-      <div class="roast-bg text-amber-50 px-6 py-4 flex justify-between items-center shrink-0">
-        <h2 id="modalTitle" class="text-lg font-bold flex items-center gap-2">
-          <i data-lucide="edit-3" class="w-5 h-5 text-amber-400"></i>
-          <span>焙煎ログの記録</span>
-        </h2>
-        <button id="closeModalBtn" class="text-amber-200 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
-          <i data-lucide="x" class="w-6 h-6"></i>
-        </button>
-      </div>
-
-      <!-- モーダルボディ（スクロール可） -->
-      <form id="logForm" class="p-6 overflow-y-auto flex-1 space-y-6">
-        <input type="hidden" id="logId">
-
-        <!-- 基本情報 -->
-        <div class="space-y-4">
-          <h3 class="text-sm font-bold text-amber-900 border-b border-amber-200 pb-1 flex items-center gap-1.5">
-            <i data-lucide="info" class="w-4 h-4"></i> 基本情報
-          </h3>
-          
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-amber-900/80 mb-1">豆の名前・品種 *</label>
-              <input type="text" id="beanName" required placeholder="例: イルガチェフェ G1 ウォッシュト" class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-amber-900/80 mb-1">原産国 / 精製方法</label>
-              <input type="text" id="origin" placeholder="例: エチオピア / Natural" class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-amber-900/80 mb-1">焙煎日時 *</label>
-              <input type="datetime-local" id="roastDate" required class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-amber-900/80 mb-1">焙煎度 *</label>
-              <select id="roastLevel" required class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white">
-                <option value="ライト (極浅煎り)">ライト (極浅煎り)</option>
-                <option value="シナモン (浅煎り)">シナモン (浅煎り)</option>
-                <option value="ミディアム (中浅煎り)" selected>ミディアム (中浅煎り)</option>
-                <option value="ハイ (中煎り)">ハイ (中煎り)</option>
-                <option value="シティ (中深煎り)">シティ (中深煎り)</option>
-                <option value="フルシティ (深煎り)">フルシティ (深煎り)</option>
-                <option value="フレンチ (極深煎り)">フレンチ (極深煎り)</option>
-                <option value="イタリアン (極深煎り)">イタリアン (極深煎り)</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-amber-900/80 mb-1">焙煎器具</label>
-              <input type="text" id="roasterMachine" placeholder="例: 手回し焙煎機 / Gene Cafe" class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-            </div>
-          </div>
-        </div>
-
-        <!-- 焙煎データ (時間 & 重量) -->
-        <div class="space-y-4">
-          <h3 class="text-sm font-bold text-amber-900 border-b border-amber-200 pb-1 flex items-center gap-1.5">
-            <i data-lucide="timer" class="w-4 h-4"></i> 焙煎データ
-          </h3>
-
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-amber-50/60 p-3 rounded-xl border border-amber-100">
-            <div>
-              <label class="block text-xs font-medium text-amber-900/80 mb-1">生豆重量 (g)</label>
-              <input type="number" id="greenWeight" step="0.1" placeholder="100.0" class="calc-trigger w-full p-2 rounded-md border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-amber-900/80 mb-1">焙煎後重量 (g)</label>
-              <input type="number" id="roastedWeight" step="0.1" placeholder="85.0" class="calc-trigger w-full p-2 rounded-md border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-amber-900/80 mb-1">減量率 (%)</label>
-              <div id="lossRateDisplay" class="w-full p-2 rounded-md bg-amber-100/70 border border-amber-200/50 text-sm font-bold text-amber-900 flex items-center justify-center">
-                0.0 %
-              </div>
-            </div>
-            <div>
-              <label class="block text-xs font-medium text-amber-900/80 mb-1">総焙煎時間</label>
-              <div class="flex gap-1 items-center">
-                <input type="number" id="roastTimeMin" placeholder="分" min="0" class="w-1/2 p-2 rounded-md border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-                <span class="text-xs font-bold">:</span>
-                <input type="number" id="roastTimeSec" placeholder="秒" min="0" max="59" class="w-1/2 p-2 rounded-md border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-amber-900/80 mb-1">1ハゼ (Crack 1) 時間</label>
-              <input type="text" id="firstCrackTime" placeholder="例: 08:30" class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-amber-900/80 mb-1">2ハゼ (Crack 2) 時間</label>
-              <input type="text" id="secondCrackTime" placeholder="例: 11:15" class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
-            </div>
-          </div>
-        </div>
-
-        <!-- 写真アップロード -->
-        <div class="space-y-3">
-          <h3 class="text-sm font-bold text-amber-900 border-b border-amber-200 pb-1 flex items-center justify-between">
-            <span class="flex items-center gap-1.5"><i data-lucide="image" class="w-4 h-4"></i> 焙煎した豆の写真</span>
-            <span class="text-xs font-normal text-amber-700/70">写真の追加・差し替え</span>
-          </h3>
-
-          <div class="flex flex-col sm:flex-row gap-4 items-start">
-            <!-- プレビュー表示 -->
-            <div id="photoPreviewContainer" class="w-32 h-32 rounded-xl bg-amber-100/50 border-2 border-dashed border-amber-300 flex flex-col items-center justify-center overflow-hidden relative shrink-0">
-              <img id="photoPreview" class="w-full h-full object-cover hidden" alt="豆のプレビュー">
-              <div id="photoPlaceholder" class="flex flex-col items-center justify-center text-amber-700/60 p-2 text-center">
-                <i data-lucide="camera" class="w-8 h-8 mb-1"></i>
-                <span class="text-[10px]">画像未選択</span>
-              </div>
-            </div>
-
-            <!-- 操作ボタン -->
-            <div class="flex-1 space-y-2 w-full">
-              <label class="cursor-pointer bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg p-2.5 flex items-center justify-center gap-2 text-xs font-semibold transition">
-                <i data-lucide="upload" class="w-4 h-4 text-amber-700"></i>
-                <span>画像をファイルから選択</span>
-                <input type="file" id="photoInput" accept="image/*" class="hidden">
-              </label>
-              <button type="button" id="removePhotoBtn" class="hidden w-full bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg p-2 text-xs font-medium transition items-center justify-center gap-1">
-                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 画像を削除
-              </button>
-              <p class="text-[11px] text-amber-800/60">※焙煎した豆のカラーやツヤ、焼きムラを写真で記録しておくと比較に便利です。</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- テイスティングメモ・備考 -->
-        <div class="space-y-3">
-          <h3 class="text-sm font-bold text-amber-900 border-b border-amber-200 pb-1 flex items-center gap-1.5">
-            <i data-lucide="file-text" class="w-4 h-4"></i> テイスティング & メモ
-          </h3>
-          <div>
-            <textarea id="notes" rows="3" placeholder="香り（アロマ・フレーバー）、酸味、甘み、苦味のバランスや次回改善点など..." class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm"></textarea>
-          </div>
-        </div>
-
-        <!-- 送信ボタン -->
-        <div class="pt-2 flex gap-3 justify-end border-t border-amber-200 shrink-0">
-          <button type="button" id="cancelModalBtn" class="px-5 py-2.5 rounded-xl border border-amber-300 text-amber-900 font-medium hover:bg-amber-50 text-sm transition">
-            キャンセル
-          </button>
-          <button type="submit" class="px-6 py-2.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-medium text-sm transition shadow-sm flex items-center gap-2">
-            <i data-lucide="save" class="w-4 h-4"></i>
-            <span>保存する</span>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- 詳細表示モーダル -->
-  <div id="detailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 opacity-0 pointer-events-none transition-opacity duration-300 p-4 overflow-y-auto">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
-      <!-- 詳細ヘッダー -->
-      <div id="detailHeader" class="roast-bg text-amber-50 px-6 py-5 flex justify-between items-start relative">
-        <div class="space-y-1">
-          <span id="detailRoastBadge" class="inline-block bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">
-            -
-          </span>
-          <h2 id="detailBeanName" class="text-xl font-bold tracking-tight text-white"></h2>
-          <p id="detailOrigin" class="text-xs text-amber-200/90 flex items-center gap-1">
-            <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> <span>-</span>
-          </p>
-        </div>
-        <button id="closeDetailModalBtn" class="text-amber-200 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
-          <i data-lucide="x" class="w-6 h-6"></i>
-        </button>
-      </div>
-
-      <!-- 詳細コンテンツ -->
-      <div class="p-6 overflow-y-auto space-y-6 flex-1">
-        <!-- 写真 ＆ ハイライトスペック -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
-          <div class="rounded-xl overflow-hidden bg-amber-900/10 aspect-video sm:aspect-square flex items-center justify-center border border-amber-200/60 shadow-inner">
-            <img id="detailPhoto" class="w-full h-full object-cover hidden" alt="豆の写真">
-            <div id="detailPhotoPlaceholder" class="text-amber-800/40 text-center p-4">
-              <i data-lucide="coffee" class="w-12 h-12 mx-auto mb-2"></i>
-              <span class="text-xs">写真なし</span>
-            </div>
-          </div>
-
-          <div class="space-y-3">
-            <div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/60 space-y-2 text-xs">
-              <div class="flex justify-between border-b border-amber-200/50 pb-1.5">
-                <span class="text-amber-900/70">焙煎日時:</span>
-                <span id="detailDate" class="font-semibold text-amber-950"></span>
-              </div>
-              <div class="flex justify-between border-b border-amber-200/50 pb-1.5">
-                <span class="text-amber-900/70">焙煎器具:</span>
-                <span id="detailMachine" class="font-semibold text-amber-950">-</span>
-              </div>
-              <div class="flex justify-between border-b border-amber-200/50 pb-1.5">
-                <span class="text-amber-900/70">生豆重量:</span>
-                <span id="detailGreenWeight" class="font-semibold text-amber-950">-</span>
-              </div>
-              <div class="flex justify-between border-b border-amber-200/50 pb-1.5">
-                <span class="text-amber-900/70">焙煎後重量:</span>
-                <span id="detailRoastedWeight" class="font-semibold text-amber-950">-</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-amber-900/70">重量減少率:</span>
-                <span id="detailLossRate" class="font-bold text-amber-700">-</span>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2 text-center text-xs">
-              <div class="bg-amber-100/50 p-2 rounded-lg border border-amber-200/40">
-                <span class="block text-[10px] text-amber-900/60">総時間</span>
-                <span id="detailTotalTime" class="font-bold text-amber-900"></span>
-              </div>
-              <div class="bg-amber-100/50 p-2 rounded-lg border border-amber-200/40">
-                <span class="block text-[10px] text-amber-900/60">1ハゼ</span>
-                <span id="detail1stCrack" class="font-bold text-amber-900">-</span>
-              </div>
-              <div class="bg-amber-100/50 p-2 rounded-lg border border-amber-200/40">
-                <span class="block text-[10px] text-amber-900/60">2ハゼ</span>
-                <span id="detail2ndCrack" class="font-bold text-amber-900">-</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- テイスティングノート -->
-        <div class="space-y-2">
-          <h4 class="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="message-square" class="w-3.5 h-3.5"></i> テイスティングノート & 備考
-          </h4>
-          <div id="detailNotes" class="bg-white p-4 rounded-xl border border-amber-200 text-sm text-amber-950 whitespace-pre-wrap leading-relaxed shadow-sm">
-            -
-          </div>
-        </div>
-      </div>
-
-      <!-- モーダル フッター（アクションボタン） -->
-      <div class="p-4 bg-amber-50/80 border-t border-amber-200 flex justify-between items-center shrink-0">
-        <button id="deleteLogBtn" class="text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1">
-          <i data-lucide="trash-2" class="w-4 h-4"></i> 削除
-        </button>
-        <div class="flex gap-2">
-          <button id="editLogBtn" class="bg-amber-800 hover:bg-amber-900 text-white px-4 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
-            <i data-lucide="edit" class="w-4 h-4"></i> 編集する
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- アプリのJSロジック -->
-  <script type="module">
-    // Firebase JS SDKの読み込み
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // アプリ環境変数の取得
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'roast-note-app';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-
-    let db = null;
-    let auth = null;
-    let currentUser = null;
-
-    // アプリ状態
-    let logs = [];
-    let activeFilter = "all";
-    let activeSearch = "";
-    let currentPhotoBase64 = null;
-    let selectedLogId = null;
-
-    // DOM要素の取得
-    const logsGrid = document.getElementById('logsGrid');
-    const emptyState = document.getElementById('emptyState');
-    const searchInput = document.getElementById('searchInput');
-    const logModal = document.getElementById('logModal');
-    const detailModal = document.getElementById('detailModal');
-    const logForm = document.getElementById('logForm');
-    const lossRateDisplay = document.getElementById('lossRateDisplay');
-    const photoInput = document.getElementById('photoInput');
-    const photoPreview = document.getElementById('photoPreview');
-    const photoPlaceholder = document.getElementById('photoPlaceholder');
-    const removePhotoBtn = document.getElementById('removePhotoBtn');
-
-    // 初期化関数
-    async function init() {
-      // Lucideアイコンの初期化
-      lucide.createIcons();
-
-      // イベントリスナーの登録
-      setupEventListeners();
-
-      // Firebase / クラウド接続のセットアップ
-      if (firebaseConfig) {
-        try {
-          const app = initializeApp(firebaseConfig);
-          db = getFirestore(app);
-          auth = getAuth(app);
-
-          // 認証処理
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            const userCred = await signInWithCustomToken(auth, __initial_auth_token);
-            currentUser = userCred.user;
-          } else {
-            const userCred = await signInAnonymously(auth);
-            currentUser = userCred.user;
-          }
-
-          // クラウドからログ一覧をリアルタイム購読
-          subscribeToLogs();
-          return;
-        } catch (e) {
-          console.error("クラウド接続エラー:", e);
-        }
-      }
-
-      // フォールバック: ローカルストレージを使用
-      loadLogsFromStorage();
-      renderLogs();
-    }
-
-    // クラウドからデータのリアルタイム同期
-    function subscribeToLogs() {
-      if (!db || !currentUser) return;
-
-      const logsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'roast_logs');
-
-      onSnapshot(logsCollection, (snapshot) => {
-        logs = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        // 日時が新しい順にソート
-        logs.sort((a, b) => new Date(b.roastDate) - new Date(a.roastDate));
-        renderLogs();
-      }, (error) => {
-        console.error("データ取得エラー:", error);
-      });
-    }
-
-    // ローカルストレージからの読み込み (フォールバック)
-    function loadLogsFromStorage() {
-      const savedLogs = localStorage.getItem('roast_logs');
-      if (savedLogs) {
-        try {
-          logs = JSON.parse(savedLogs);
-        } catch(e) {
-          logs = [];
-        }
-      }
-    }
-
-    // ローカルストレージへの保存 (フォールバック)
-    function saveLogsToStorage() {
-      localStorage.setItem('roast_logs', JSON.stringify(logs));
-    }
-
-    // イベントリスナー設定
-    function setupEventListeners() {
-      // 新規作成ボタン
-      document.getElementById('openNewLogBtn').addEventListener('click', () => openLogModal());
-      document.getElementById('emptyNewLogBtn').addEventListener('click', () => openLogModal());
-
-      // モーダル閉じるボタン
-      document.getElementById('closeModalBtn').addEventListener('click', closeLogModal);
-      document.getElementById('cancelModalBtn').addEventListener('click', closeLogModal);
-      document.getElementById('closeDetailModalBtn').addEventListener('click', closeDetailModal);
-
-      // 検索入力
-      searchInput.addEventListener('input', (e) => {
-        activeSearch = e.target.value.toLowerCase();
-        renderLogs();
-      });
-
-      // フィルターボタン
-      document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.filter-btn').forEach(b => {
-            b.classList.remove('bg-amber-900', 'text-amber-50');
-            b.classList.add('bg-white', 'text-amber-900', 'border', 'border-amber-200');
-          });
-          btn.classList.remove('bg-white', 'border', 'border-amber-200');
-          btn.classList.add('bg-amber-900', 'text-amber-50');
-
-          activeFilter = btn.getAttribute('data-filter');
-          renderLogs();
-        });
-      });
-
-      // 減量率の自動計算イベント
-      document.querySelectorAll('.calc-trigger').forEach(input => {
-        input.addEventListener('input', calculateLossRate);
-      });
-
-      // 画像アップロードイベント
-      photoInput.addEventListener('change', handlePhotoUpload);
-      removePhotoBtn.addEventListener('click', removePhoto);
-
-      // フォーム送信
-      logForm.addEventListener('submit', handleFormSubmit);
-
-      // 詳細モーダル内のアクション
-      document.getElementById('deleteLogBtn').addEventListener('click', handleDeleteLog);
-      document.getElementById('editLogBtn').addEventListener('click', handleEditLog);
-    }
-
-    // 減量率の計算
-    function calculateLossRate() {
-      const green = parseFloat(document.getElementById('greenWeight').value);
-      const roasted = parseFloat(document.getElementById('roastedWeight').value);
-
-      if (green > 0 && roasted > 0 && green >= roasted) {
-        const loss = ((green - roasted) / green) * 100;
-        lossRateDisplay.textContent = `${loss.toFixed(1)} %`;
-      } else {
-        lossRateDisplay.textContent = '0.0 %';
-      }
-    }
-
-    // 画像ファイルの処理
-    function handlePhotoUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        currentPhotoBase64 = event.target.result;
-        photoPreview.src = currentPhotoBase64;
-        photoPreview.classList.remove('hidden');
-        photoPlaceholder.classList.add('hidden');
-        removePhotoBtn.classList.remove('hidden');
-        removePhotoBtn.classList.add('flex');
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // 画像削除
-    function removePhoto() {
-      currentPhotoBase64 = null;
-      photoInput.value = '';
-      photoPreview.src = '';
-      photoPreview.classList.add('hidden');
-      photoPlaceholder.classList.remove('hidden');
-      removePhotoBtn.classList.add('hidden');
-      removePhotoBtn.classList.remove('flex');
-    }
-
-    // モーダルを開く（新規作成または編集）
-    function openLogModal(logToEdit = null) {
-      logForm.reset();
-      currentPhotoBase64 = null;
-      removePhoto();
-
-      if (logToEdit) {
-        document.getElementById('modalTitle').innerHTML = `<i data-lucide="edit-3" class="w-5 h-5 text-amber-400"></i><span>焙煎ログの編集</span>`;
-        document.getElementById('logId').value = logToEdit.id;
-        document.getElementById('beanName').value = logToEdit.beanName;
-        document.getElementById('origin').value = logToEdit.origin || '';
-        document.getElementById('roastDate').value = logToEdit.roastDate || '';
-        document.getElementById('roastLevel').value = logToEdit.roastLevel;
-        document.getElementById('roasterMachine').value = logToEdit.roasterMachine || '';
-        document.getElementById('greenWeight').value = logToEdit.greenWeight || '';
-        document.getElementById('roastedWeight').value = logToEdit.roastedWeight || '';
-        document.getElementById('roastTimeMin').value = logToEdit.roastTimeMin || '';
-        document.getElementById('roastTimeSec').value = logToEdit.roastTimeSec || '';
-        document.getElementById('firstCrackTime').value = logToEdit.firstCrackTime || '';
-        document.getElementById('secondCrackTime').value = logToEdit.secondCrackTime || '';
-        document.getElementById('notes').value = logToEdit.notes || '';
-
-        if (logToEdit.photo) {
-          currentPhotoBase64 = logToEdit.photo;
-          photoPreview.src = logToEdit.photo;
-          photoPreview.classList.remove('hidden');
-          photoPlaceholder.classList.add('hidden');
-          removePhotoBtn.classList.remove('hidden');
-          removePhotoBtn.classList.add('flex');
-        }
-
-        calculateLossRate();
-      } else {
-        document.getElementById('modalTitle').innerHTML = `<i data-lucide="plus-circle" class="w-5 h-5 text-amber-400"></i><span>新規焙煎ログの記録</span>`;
-        document.getElementById('logId').value = '';
-        // 現在日時をデフォルト設定
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('roastDate').value = now.toISOString().slice(0, 16);
-        lossRateDisplay.textContent = '0.0 %';
-      }
-
-      lucide.createIcons();
-      logModal.classList.remove('opacity-0', 'pointer-events-none');
-    }
-
-    function closeLogModal() {
-      logModal.classList.add('opacity-0', 'pointer-events-none');
-    }
-
-    // 詳細モーダル表示
-    function openDetailModal(id) {
-      const log = logs.find(l => l.id === id);
-      if (!log) return;
-
-      selectedLogId = id;
-
-      document.getElementById('detailBeanName').textContent = log.beanName;
-      document.getElementById('detailOrigin').querySelector('span').textContent = log.origin || '情報なし';
-      document.getElementById('detailRoastBadge').textContent = log.roastLevel;
-      
-      const dateObj = new Date(log.roastDate);
-      const dateStr = !isNaN(dateObj) ? dateObj.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : log.roastDate;
-      document.getElementById('detailDate').textContent = dateStr;
-      
-      document.getElementById('detailMachine').textContent = log.roasterMachine || '未記載';
-      document.getElementById('detailGreenWeight').textContent = log.greenWeight ? `${log.greenWeight} g` : '-';
-      document.getElementById('detailRoastedWeight').textContent = log.roastedWeight ? `${log.roastedWeight} g` : '-';
-
-      if (log.greenWeight && log.roastedWeight) {
-        const loss = ((log.greenWeight - log.roastedWeight) / log.greenWeight) * 100;
-        document.getElementById('detailLossRate').textContent = `${loss.toFixed(1)} %`;
-      } else {
-        document.getElementById('detailLossRate').textContent = '-';
-      }
-
-      const min = log.roastTimeMin || '0';
-      const sec = log.roastTimeSec ? String(log.roastTimeSec).padStart(2, '0') : '00';
-      document.getElementById('detailTotalTime').textContent = `${min}:${sec}`;
-
-      document.getElementById('detail1stCrack').textContent = log.firstCrackTime || '-';
-      document.getElementById('detail2ndCrack').textContent = log.secondCrackTime || '-';
-      document.getElementById('detailNotes').textContent = log.notes || 'メモはありません。';
-
-      // 画像の表示処理
-      const photoEl = document.getElementById('detailPhoto');
-      const placeholderEl = document.getElementById('detailPhotoPlaceholder');
-
-      if (log.photo) {
-        photoEl.src = log.photo;
-        photoEl.classList.remove('hidden');
-        placeholderEl.classList.add('hidden');
-      } else {
-        photoEl.classList.add('hidden');
-        placeholderEl.classList.remove('hidden');
-      }
-
-      lucide.createIcons();
-      detailModal.classList.remove('opacity-0', 'pointer-events-none');
-    }
-
-    function closeDetailModal() {
-      detailModal.classList.add('opacity-0', 'pointer-events-none');
-    }
-
-    // フォーム送信処理 (クラウド保存対応)
-    async function handleFormSubmit(e) {
-      e.preventDefault();
-
-      const id = document.getElementById('logId').value || `log_${Date.now()}`;
-      const logData = {
-        beanName: document.getElementById('beanName').value,
-        origin: document.getElementById('origin').value,
-        roastDate: document.getElementById('roastDate').value,
-        roastLevel: document.getElementById('roastLevel').value,
-        roasterMachine: document.getElementById('roasterMachine').value,
-        greenWeight: parseFloat(document.getElementById('greenWeight').value) || null,
-        roastedWeight: parseFloat(document.getElementById('roastedWeight').value) || null,
-        roastTimeMin: parseInt(document.getElementById('roastTimeMin').value) || null,
-        roastTimeSec: parseInt(document.getElementById('roastTimeSec').value) || null,
-        firstCrackTime: document.getElementById('firstCrackTime').value,
-        secondCrackTime: document.getElementById('secondCrackTime').value,
-        photo: currentPhotoBase64 || null,
-        notes: document.getElementById('notes').value
-      };
-
-      if (db && currentUser) {
-        // クラウドDBに保存・更新
-        try {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'roast_logs', id);
-          await setDoc(docRef, logData, { merge: true });
-        } catch (err) {
-          console.error("保存失敗:", err);
-        }
-      } else {
-        // ローカルストレージに保存
-        const existingIndex = logs.findIndex(l => l.id === id);
-        const fullLogData = { id, ...logData };
-        if (existingIndex >= 0) {
-          logs[existingIndex] = fullLogData;
-        } else {
-          logs.unshift(fullLogData);
-        }
-        saveLogsToStorage();
-        renderLogs();
-      }
-
-      closeLogModal();
-    }
-
-    // ログ削除 (クラウド対応)
-    async function handleDeleteLog() {
-      if (!selectedLogId) return;
-      
-      // カスタム確認（簡易モーダルの代替としてUI側で実行）
-      if (!window.confirm('この焙煎記録を削除してもよろしいですか？')) return;
-
-      if (db && currentUser) {
-        try {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'roast_logs', selectedLogId);
-          await deleteDoc(docRef);
-        } catch (err) {
-          console.error("削除失敗:", err);
-        }
-      } else {
-        logs = logs.filter(l => l.id !== selectedLogId);
-        saveLogsToStorage();
-        renderLogs();
-      }
-
-      closeDetailModal();
-    }
-
-    // ログ編集ボタン押下
-    function handleEditLog() {
-      if (!selectedLogId) return;
-      const logToEdit = logs.find(l => l.id === selectedLogId);
-      closeDetailModal();
-      if (logToEdit) {
-        openLogModal(logToEdit);
-      }
-    }
-
-    // ログリストのフィルタリングとレンダリング
-    function renderLogs() {
-      logsGrid.innerHTML = '';
-
-      const filteredLogs = logs.filter(log => {
-        // 焙煎度フィルター
-        let matchesFilter = true;
-        if (activeFilter !== 'all') {
-          matchesFilter = log.roastLevel.includes(activeFilter);
-        }
-
-        // 検索クエリ
-        let matchesSearch = true;
-        if (activeSearch) {
-          const beanName = (log.beanName || '').toLowerCase();
-          const origin = (log.origin || '').toLowerCase();
-          const level = (log.roastLevel || '').toLowerCase();
-          const notes = (log.notes || '').toLowerCase();
-
-          matchesSearch = beanName.includes(activeSearch) || origin.includes(activeSearch) || level.includes(activeSearch) || notes.includes(activeSearch);
-        }
-
-        return matchesFilter && matchesSearch;
-      });
-
-      if (filteredLogs.length === 0) {
-        emptyState.classList.remove('hidden');
-        emptyState.classList.add('flex');
-      } else {
-        emptyState.classList.add('hidden');
-        emptyState.classList.remove('flex');
-
-        filteredLogs.forEach(log => {
-          const card = createLogCard(log);
-          logsGrid.appendChild(card);
-        });
-      }
-
-      lucide.createIcons();
-    }
-
-    // カードエレメントの作成
-    function createLogCard(log) {
-      const card = document.createElement('div');
-      card.className = "bg-white rounded-2xl border border-amber-200/80 shadow-sm hover:shadow-md transition cursor-pointer overflow-hidden flex flex-col group";
-      card.addEventListener('click', () => openDetailModal(log.id));
-
-      const dateObj = new Date(log.roastDate);
-      const formattedDate = !isNaN(dateObj) ? `${dateObj.getFullYear()}/${dateObj.getMonth()+1}/${dateObj.getDate()}` : log.roastDate;
-
-      const min = log.roastTimeMin || '0';
-      const sec = log.roastTimeSec ? String(log.roastTimeSec).padStart(2, '0') : '00';
-
-      let lossText = '-';
-      if (log.greenWeight && log.roastedWeight) {
-        const loss = ((log.greenWeight - log.roastedWeight) / log.greenWeight) * 100;
-        lossText = `${loss.toFixed(1)}%`;
-      }
-
-      card.innerHTML = `
-        <div class="relative aspect-[16/10] bg-amber-100/60 overflow-hidden">
-          ${log.photo ? 
-            `<img src="${log.photo}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" alt="${log.beanName}">` : 
-            `<div class="w-full h-full flex flex-col items-center justify-center text-amber-800/40">
-              <i data-lucide="coffee" class="w-10 h-10 mb-1"></i>
-              <span class="text-xs font-medium">No Image</span>
-             </div>`
-          }
-          <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-amber-100 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/20">
-            ${log.roastLevel}
-          </div>
-        </div>
-
-        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-          <div>
-            <div class="flex justify-between items-start gap-2 mb-1">
-              <h3 class="font-bold text-amber-950 text-base leading-snug line-clamp-1 group-hover:text-amber-700 transition">${log.beanName}</h3>
-            </div>
-            <p class="text-xs text-amber-800/70 line-clamp-1 flex items-center gap-1">
-              <i data-lucide="map-pin" class="w-3 h-3 shrink-0"></i>
-              <span>${log.origin || '原産国未指定'}</span>
-            </p>
-          </div>
-
-          <div class="grid grid-cols-3 gap-1 bg-amber-50 p-2 rounded-xl text-center text-xs border border-amber-100">
-            <div>
-              <span class="block text-[10px] text-amber-800/60">時間</span>
-              <span class="font-bold text-amber-900">${min}:${sec}</span>
-            </div>
-            <div>
-              <span class="block text-[10px] text-amber-800/60">焙煎量</span>
-              <span class="font-bold text-amber-900">${log.roastedWeight ? log.roastedWeight + 'g' : '-'}</span>
-            </div>
-            <div>
-              <span class="block text-[10px] text-amber-800/60">減量率</span>
-              <span class="font-bold text-amber-700">${lossText}</span>
-            </div>
-          </div>
-
-          <div class="flex justify-between items-center pt-1 text-[11px] text-amber-900/50 border-t border-amber-100">
-            <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> ${formattedDate}</span>
-            <span class="flex items-center gap-1 text-amber-700 font-medium group-hover:translate-x-0.5 transition">詳細を見る <i data-lucide="chevron-right" class="w-3 h-3"></i></span>
-          </div>
-        </div>
-      `;
-
-      return card;
-    }
-
-    // 起動処理
-    window.addEventListener('DOMContentLoaded', init);
-  </script>
+<body class="bg-amber-50/50 text-amber-950 min-h-screen pb-20">
+<!-- ヘッダー -->
+<header class="bg-amber-900 text-amber-50 shadow-md sticky top-0 z-30">
+<div class="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
+<div class="flex items-center space-x-2.5">
+<div class="w-9 h-9 rounded-xl bg-amber-800 flex items-center justify-center shadow-inner text-amber-200 shrink-0">
+<i data-lucide="coffee" class="w-5 h-5"></i>
+</div>
+<div>
+<h1 class="font-bold text-base leading-tight tracking-wide">RoastNote</h1>
+<p class="text-[11px] text-amber-200/80">コーヒー焙煎記録マネージャー</p>
+</div>
+</div>
+<button id="openNewLogModalBtn" class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow transition flex items-center gap-1.5 active:scale-95 shrink-0">
+<i data-lucide="plus" class="w-4 h-4"></i>
+<span>新規焙煎記録</span>
+</button>
+</div>
+</header>
+<!-- メインコンテンツ -->
+<main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+<!-- 検索 & フィルターバー -->
+<div class="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white p-3.5 rounded-2xl shadow-sm border border-amber-100">
+<!-- 検索窓 -->
+<div class="relative w-full sm:w-72">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-amber-400">
+<i data-lucide="search" class="w-4 h-4"></i>
+</span>
+<input type="text" id="searchInput" placeholder="豆名や産地で検索..." class="w-full pl-9 pr-4 py-2 bg-amber-50/50 border border-amber-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-600/50">
+</div>
+<!-- フィルタータブ -->
+<div class="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+<button type="button" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-medium transition bg-amber-900 text-amber-50 shadow-sm shrink-0" data-filter="all">すべて</button>
+<button type="button" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-medium transition bg-amber-100/70 text-amber-800 hover:bg-amber-200 shrink-0" data-filter="light">浅煎り</button>
+<button type="button" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-medium transition bg-amber-100/70 text-amber-800 hover:bg-amber-200 shrink-0" data-filter="medium">中煎り</button>
+<button type="button" class="filter-btn px-3 py-1.5 rounded-xl text-xs font-medium transition bg-amber-100/70 text-amber-800 hover:bg-amber-200 shrink-0" data-filter="dark">深煎り</button>
+</div>
+</div>
+<!-- ログ一覧グリッド -->
+<section>
+<div class="flex items-center justify-between mb-3 px-1">
+<h2 class="text-xs font-bold uppercase tracking-wider text-amber-900/70 flex items-center gap-1.5">
+<i data-lucide="book-open" class="w-3.5 h-3.5"></i> 焙煎ログ一覧
+</h2>
+<span id="logCountBadge" class="text-xs text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full font-semibold">0件</span>
+</div>
+<div id="logsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- JavaScriptで動的生成 -->
+</div>
+<!-- 空状態プレースホルダー -->
+<div id="emptyState" class="hidden text-center py-12 bg-white rounded-2xl border border-dashed border-amber-200 p-8 space-y-3">
+<div class="w-12 h-12 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center mx-auto">
+<i data-lucide="coffee" class="w-6 h-6"></i>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-bold text-amber-900">焙煎ログがまだありません</p>
+<p class="text-xs text-amber-700/70">「新規焙煎記録」ボタンから最初のデータを記録しましょう！</p>
+</div>
+</div>
+</section>
+</main>
+<!-- カスタム確認ダイアログモーダル -->
+<div id="confirmModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+<div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden p-6 space-y-4 transform scale-95 transition-transform duration-300" id="confirmModalContainer">
+<div class="flex items-center gap-3 text-amber-900">
+<div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+<i data-lucide="alert-triangle" class="w-5 h-5"></i>
+</div>
+<div>
+<h3 class="font-bold text-sm" id="confirmTitle">確認</h3>
+<p class="text-xs text-amber-800/80 mt-0.5" id="confirmMessage">本当に削除しますか？</p>
+</div>
+</div>
+<div class="flex gap-2 pt-2">
+<button type="button" id="confirmCancelBtn" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-900 py-2.5 rounded-xl text-xs font-semibold transition">
+キャンセル
+</button>
+<button type="button" id="confirmOkBtn" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2.5 rounded-xl text-xs font-semibold transition shadow-sm">
+削除する
+</button>
+</div>
+</div>
+</div>
+<!-- 新規作成・編集モーダル -->
+<div id="logModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 opacity-0 pointer-events-none transition-all duration-300">
+<div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transform scale-95 transition-transform duration-300" id="modalContainer">
+<!-- モーダルヘッダー -->
+<div class="bg-amber-900 text-amber-50 px-5 py-4 flex items-center justify-between shrink-0">
+<div class="flex items-center gap-2">
+<i data-lucide="flame" class="w-5 h-5 text-amber-400"></i>
+<h2 id="modalTitle" class="font-bold text-sm tracking-wide">新規焙煎記録</h2>
+</div>
+<button type="button" id="closeModalBtn" class="w-8 h-8 rounded-full hover:bg-amber-800 flex items-center justify-center text-amber-200 transition shrink-0">
+<i data-lucide="x" class="w-5 h-5"></i>
+</button>
+</div>
+<!-- モーダルボディ -->
+<div class="p-4 sm:p-5 overflow-y-auto overflow-x-hidden space-y-5 flex-1">
+<form id="logForm" class="space-y-5">
+<input type="hidden" id="editingLogId">
+<!-- 基本情報 -->
+<div class="space-y-3">
+<h3 class="text-sm font-bold text-amber-900 border-b border-amber-200 pb-1 flex items-center gap-1.5">
+<i data-lucide="info" class="w-4 h-4"></i> 基本情報
+</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">焙煎日</label>
+<input type="date" id="roastDate" required class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-amber-50/30">
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">コーヒー豆名 / ブランド</label>
+<input type="text" id="beanName" placeholder="例: エチオピア イルガチェフェ" required class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">生産国 / 地域</label>
+<input type="text" id="origin" placeholder="例: エチオピア南部シダモ" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">精製方法 (Process)</label>
+<select id="process" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white">
+<option value="ウォッシュド (Washed)">ウォッシュド (Washed)</option>
+<option value="ナチュラル (Natural)">ナチュラル (Natural)</option>
+<option value="ハニー (Honey)">ハニー (Honey)</option>
+<option value="アナエロビック (Anaerobic)">アナエロビック (Anaerobic)</option>
+<option value="その他">その他</option>
+</select>
+</div>
+</div>
+</div>
+<!-- ロースター & プロファイル -->
+<div class="space-y-3">
+<h3 class="text-sm font-bold text-amber-900 border-b border-amber-200 pb-1 flex items-center gap-1.5">
+<i data-lucide="settings" class="w-4 h-4"></i> 焙煎器具 & プロファイル
+</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">使用ロースター / 焙煎機</label>
+<input type="text" id="roaster" placeholder="例: GENE CAFE / 手網" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">焙煎度合い</label>
+<select id="roastLevel" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white">
+<option value="light">浅煎り (Light)</option>
+<option value="medium" selected>中煎り (Medium)</option>
+<option value="dark">深煎り (Dark)</option>
+</select>
+</div>
+</div>
+</div>
+<!-- 焙煎データ (時間 & 重量) + ストップウォッチ -->
+<div class="space-y-4">
+<h3 class="text-sm font-bold text-amber-900 border-b border-amber-200 pb-1 flex items-center justify-between">
+<span class="flex items-center gap-1.5"><i data-lucide="timer" class="w-4 h-4"></i> 焙煎データ</span>
+<span class="text-xs font-normal text-amber-700/70">タイマーでリアルタイム記録</span>
+</h3>
+<!-- ストップウォッチ UI -->
+<div class="bg-amber-900 text-amber-50 p-4 rounded-xl space-y-3 shadow-inner">
+<div class="flex items-center justify-between">
+<span class="text-xs font-medium text-amber-200/80 flex items-center gap-1">
+<i data-lucide="play-circle" class="w-4 h-4 text-amber-400"></i> 焙煎タイマー
+</span>
+<div id="stopwatchDisplay" class="font-mono-num text-2xl font-bold tracking-wider text-amber-300">
+00:00
+</div>
+</div>
+<!-- タイマーコントロール -->
+<div class="flex items-center gap-2">
+<button type="button" id="startPauseTimerBtn" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white py-1.5 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1 shadow">
+<i data-lucide="play" class="w-3.5 h-3.5" id="timerPlayIcon"></i>
+<span id="timerPlayText">スタート</span>
+</button>
+<button type="button" id="resetTimerBtn" class="bg-amber-950 hover:bg-black/40 text-amber-200 py-1.5 px-3 rounded-lg text-xs font-medium transition flex items-center gap-1">
+<i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> リセット
+</button>
+</div>
+<!-- 記録アクションボタン -->
+<div class="grid grid-cols-3 gap-2 pt-1 border-t border-amber-800/60">
+<button type="button" id="record1stCrackBtn" class="bg-amber-800/80 hover:bg-amber-700 text-amber-100 py-1.5 px-1 rounded-lg text-[11px] font-medium transition flex flex-col items-center justify-center gap-0.5 border border-amber-700/50 active:scale-95">
+<span class="text-[10px] text-amber-300">1ハゼ記録</span>
+<span id="btn1stCrackVal" class="font-mono-num text-xs font-bold">--:--</span>
+</button>
+<button type="button" id="record2ndCrackBtn" class="bg-amber-800/80 hover:bg-amber-700 text-amber-100 py-1.5 px-1 rounded-lg text-[11px] font-medium transition flex flex-col items-center justify-center gap-0.5 border border-amber-700/50 active:scale-95">
+<span class="text-[10px] text-amber-300">2ハゼ記録</span>
+<span id="btn2ndCrackVal" class="font-mono-num text-xs font-bold">--:--</span>
+</button>
+<button type="button" id="recordTotalTimeBtn" class="bg-amber-700 hover:bg-amber-600 text-white py-1.5 px-1 rounded-lg text-[11px] font-medium transition flex flex-col items-center justify-center gap-0.5 border border-amber-500/50 shadow-sm active:scale-95">
+<span class="text-[10px] text-amber-200">終了(総時間)</span>
+<span id="btnTotalVal" class="font-mono-num text-xs font-bold">--:--</span>
+</button>
+</div>
+</div>
+<!-- 重量・時間の手動入力グリッド -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-amber-50/60 p-3 rounded-xl border border-amber-100">
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">生豆重量 (g)</label>
+<input type="number" id="greenWeight" step="0.1" placeholder="100.0" class="calc-trigger w-full p-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white">
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">焙煎後 (g)</label>
+<input type="number" id="roastedWeight" step="0.1" placeholder="85.0" class="calc-trigger w-full p-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white">
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">減量率 (%)</label>
+<div id="lossRateDisplay" class="w-full p-2 rounded-lg bg-amber-100/70 border border-amber-200/50 text-xs font-bold text-amber-900 flex items-center justify-center font-mono-num h-[38px]">
+0.0 %
+</div>
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">総時間</label>
+<div class="flex gap-1 items-center">
+<input type="number" id="roastTimeMin" placeholder="分" min="0" class="w-1/2 p-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-xs bg-white font-mono-num">
+<span class="text-xs font-bold">:</span>
+<input type="number" id="roastTimeSec" placeholder="秒" min="0" max="59" class="w-1/2 p-2 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-xs bg-white font-mono-num">
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div>
+<label class="block text-xs font-semibold text-amber-900/80 mb-1">1ハゼ時間</label>
+<input type="text" id="firstCrackTime" placeholder="例: 08:30" class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white font-mono-num">
+</div>
+<div>
+<label class="block text-xs font-semibold text-amber-900/80 mb-1">2ハゼ時間</label>
+<input type="text" id="secondCrackTime" placeholder="例: 11:15" class="w-full p-2.5 rounded-lg border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white font-mono-num">
+</div>
+</div>
+</div>
+<!-- テイスティング・メモ -->
+<div class="space-y-3">
+<h3 class="text-sm font-bold text-amber-900 border-b border-amber-200 pb-1 flex items-center gap-1.5">
+<i data-lucide="clipboard-pen" class="w-4 h-4"></i> カッピング評価・メモ
+</h3>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">酸味 (Acidity)</label>
+<select id="flavorAcidity" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white">
+<option value="1">1 (マイルド)</option>
+<option value="2">2 (やや控えめ)</option>
+<option value="3" selected>3 (普通)</option>
+<option value="4">4 (明るい)</option>
+<option value="5">5 (ジューシー)</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">苦味 (Bitterness)</label>
+<select id="flavorBitterness" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white">
+<option value="1">1 (軽い)</option>
+<option value="2">2 (すっきり)</option>
+<option value="3" selected>3 (バランス)</option>
+<option value="4">4 (しっかり)</option>
+<option value="5">5 (重厚)</option>
+</select>
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">甘味 (Sweetness)</label>
+<select id="flavorSweetness" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white">
+<option value="1">1 (控えめ)</option>
+<option value="2">2</option>
+<option value="3" selected>3 (感じられる)</option>
+<option value="4">4</option>
+<option value="5">5 (非常に甘い)</option>
+</select>
+</div>
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">フレーバーノート / 特徴</label>
+<input type="text" id="flavorNotes" placeholder="例: シトラス, ジャスミン, キャラメル" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
+</div>
+<div>
+<label class="block text-xs font-medium text-amber-900/80 mb-1">焙煎メモ・反省点</label>
+<textarea id="memo" rows="3" placeholder="火力調整、ハゼの様子、カッピングの感想など..." class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm resize-none"></textarea>
+</div>
+</div>
+<!-- 写真アップロード（圧縮処理付き） -->
+<div class="space-y-3">
+<h3 class="text-sm font-bold text-amber-900 border-b border-amber-200 pb-1 flex items-center gap-1.5">
+<i data-lucide="image" class="w-4 h-4"></i> 焙煎豆の写真
+</h3>
+<div class="flex items-center gap-4">
+<label class="flex-1 border-2 border-dashed border-amber-300 hover:border-amber-500 rounded-2xl p-4 text-center cursor-pointer bg-amber-50/40 transition flex flex-col items-center justify-center gap-1 group">
+<i data-lucide="camera" class="w-6 h-6 text-amber-600 group-hover:scale-110 transition-transform"></i>
+<span class="text-xs font-semibold text-amber-900">写真を選択 / 撮影</span>
+<span class="text-[10px] text-amber-700/70">自動圧縮されます</span>
+<input type="file" id="photoInput" accept="image/*" class="hidden">
+</label>
+<div id="photoPreviewContainer" class="relative hidden w-24 h-24 rounded-2xl overflow-hidden border border-amber-200 shadow-sm shrink-0">
+<img id="photoPreview" src="" alt="プレビュー" class="w-full h-full object-cover">
+<button type="button" id="removePhotoBtn" class="absolute top-1 right-1 bg-black/60 hover:bg-black text-white p-1 rounded-full text-xs transition">
+<i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+</button>
+</div>
+</div>
+</div>
+<!-- 送信ボタン -->
+<div class="pt-4 border-t border-amber-100 flex gap-3">
+<button type="button" id="cancelModalBtn" class="flex-1 bg-amber-100 hover:bg-amber-200 text-amber-900 py-3 rounded-xl text-sm font-semibold transition">
+キャンセル
+</button>
+<button type="submit" class="flex-1 bg-amber-900 hover:bg-amber-800 text-white py-3 rounded-xl text-sm font-semibold shadow-md transition flex items-center justify-center gap-2">
+<i data-lucide="check" class="w-4 h-4"></i> 記録を保存する
+</button>
+</div>
+</form>
+</div>
+</div>
+</div>
+<!-- 詳細表示モーダル -->
+<div id="detailModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 opacity-0 pointer-events-none transition-all duration-300">
+<div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transform scale-95 transition-transform duration-300" id="detailModalContainer">
+<div class="bg-amber-900 text-amber-50 px-5 py-4 flex items-center justify-between shrink-0">
+<div class="flex items-center gap-2">
+<i data-lucide="coffee" class="w-5 h-5 text-amber-400"></i>
+<h2 class="font-bold text-sm tracking-wide">焙煎ログ詳細</h2>
+</div>
+<button type="button" id="closeDetailBtn" class="w-8 h-8 rounded-full hover:bg-amber-800 flex items-center justify-center text-amber-200 transition shrink-0">
+<i data-lucide="x" class="w-5 h-5"></i>
+</button>
+</div>
+<div id="detailModalBody" class="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+<!-- 動的注入 -->
+</div>
+<div class="p-4 bg-amber-50 border-t border-amber-100 flex justify-end gap-2 shrink-0">
+<button type="button" id="editFromDetailBtn" class="bg-amber-700 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+<i data-lucide="pencil" class="w-3.5 h-3.5"></i> 編集する
+</button>
+<button type="button" id="deleteFromDetailBtn" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+<i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 削除
+</button>
+</div>
+</div>
+</div>
+<!-- カスタム通知ポップアップ -->
+<div id="toast" class="fixed bottom-6 right-6 z-50 bg-amber-950 text-amber-50 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 transform translate-y-20 opacity-0 transition-all duration-300 text-xs font-medium">
+<i data-lucide="check-circle-2" class="w-4 h-4 text-amber-400"></i>
+<span id="toastMessage">保存しました</span>
+</div>
+<!-- アプリケーションロジック -->
+<script type="module">
+let logs = JSON.parse(localStorage.getItem('roast_note_logs') || '[]');
+let activeFilter = "all";
+let activeSearch = "";
+let currentPhotoBase64 = null;
+let selectedLogId = null;
+let timerInterval = null;
+let timerSeconds = 0;
+let isTimerRunning = false;
+let confirmCallback = null;
+const logsGrid = document.getElementById('logsGrid');
+const emptyState = document.getElementById('emptyState');
+const logCountBadge = document.getElementById('logCountBadge');
+const searchInput = document.getElementById('searchInput');
+const filterBtns = document.querySelectorAll('.filter-btn');
+const logModal = document.getElementById('logModal');
+const modalContainer = document.getElementById('modalContainer');
+const openNewLogModalBtn = document.getElementById('openNewLogModalBtn');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const cancelModalBtn = document.getElementById('cancelModalBtn');
+const logForm = document.getElementById('logForm');
+const modalTitle = document.getElementById('modalTitle');
+const editingLogId = document.getElementById('editingLogId');
+const detailModal = document.getElementById('detailModal');
+const detailModalContainer = document.getElementById('detailModalContainer');
+const closeDetailBtn = document.getElementById('closeDetailBtn');
+const detailModalBody = document.getElementById('detailModalBody');
+const editFromDetailBtn = document.getElementById('editFromDetailBtn');
+const deleteFromDetailBtn = document.getElementById('deleteFromDetailBtn');
+const confirmModal = document.getElementById('confirmModal');
+const confirmModalContainer = document.getElementById('confirmModalContainer');
+const confirmMessage = document.getElementById('confirmMessage');
+const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+const confirmOkBtn = document.getElementById('confirmOkBtn');
+const photoInput = document.getElementById('photoInput');
+const photoPreview = document.getElementById('photoPreview');
+const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+const removePhotoBtn = document.getElementById('removePhotoBtn');
+const greenWeightInput = document.getElementById('greenWeight');
+const roastedWeightInput = document.getElementById('roastedWeight');
+const lossRateDisplay = document.getElementById('lossRateDisplay');
+window.addEventListener('DOMContentLoaded', () => {
+lucide.createIcons();
+renderLogs();
+setupEventListeners();
+});
+function showConfirm(message, onOk) {
+confirmMessage.textContent = message;
+confirmCallback = onOk;
+confirmModal.classList.remove('opacity-0', 'pointer-events-none');
+confirmModalContainer.classList.remove('scale-95');
+confirmModalContainer.classList.add('scale-100');
+}
+function hideConfirm() {
+confirmModalContainer.classList.remove('scale-100');
+confirmModalContainer.classList.add('scale-95');
+confirmModal.classList.add('opacity-0', 'pointer-events-none');
+confirmCallback = null;
+}
+function setupEventListeners() {
+openNewLogModalBtn.addEventListener('click', () => openLogModal());
+closeModalBtn.addEventListener('click', closeLogModal);
+cancelModalBtn.addEventListener('click', closeLogModal);
+logModal.addEventListener('click', (e) => {
+if (e.target === logModal) closeLogModal();
+});
+closeDetailBtn.addEventListener('click', closeDetailModal);
+detailModal.addEventListener('click', (e) => {
+if (e.target === detailModal) closeDetailModal();
+});
+confirmCancelBtn.addEventListener('click', hideConfirm);
+confirmOkBtn.addEventListener('click', () => {
+if (typeof confirmCallback === 'function') {
+confirmCallback();
+}
+hideConfirm();
+});
+confirmModal.addEventListener('click', (e) => {
+if (e.target === confirmModal) hideConfirm();
+});
+searchInput.addEventListener('input', (e) => {
+activeSearch = e.target.value.toLowerCase();
+renderLogs();
+});
+filterBtns.forEach(btn => {
+btn.addEventListener('click', () => {
+filterBtns.forEach(b => b.classList.replace('bg-amber-900', 'bg-amber-100/70'));
+filterBtns.forEach(b => b.classList.replace('text-amber-50', 'text-amber-800'));
+btn.classList.replace('bg-amber-100/70', 'bg-amber-900');
+btn.classList.replace('text-amber-800', 'text-amber-50');
+activeFilter = btn.dataset.filter;
+renderLogs();
+});
+});
+document.querySelectorAll('.calc-trigger').forEach(el => {
+el.addEventListener('input', calculateLossRate);
+});
+photoInput.addEventListener('change', handlePhotoUpload);
+removePhotoBtn.addEventListener('click', removePhoto);
+document.getElementById('startPauseTimerBtn').addEventListener('click', toggleTimer);
+document.getElementById('resetTimerBtn').addEventListener('click', resetTimer);
+document.getElementById('record1stCrackBtn').addEventListener('click', record1stCrack);
+document.getElementById('record2ndCrackBtn').addEventListener('click', record2ndCrack);
+document.getElementById('recordTotalTimeBtn').addEventListener('click', recordTotalTime);
+logForm.addEventListener('submit', handleFormSubmit);
+editFromDetailBtn.addEventListener('click', () => {
+const log = logs.find(l => l.id === selectedLogId);
+if (log) {
+closeDetailModal();
+openLogModal(log);
+}
+});
+deleteFromDetailBtn.addEventListener('click', () => {
+showConfirm('この焙煎ログを削除してもよろしいですか？', () => {
+logs = logs.filter(l => l.id !== selectedLogId);
+saveToLocalStorage();
+closeDetailModal();
+renderLogs();
+showToast('ログを削除しました');
+});
+});
+}
+function formatTime(totalSec) {
+const min = Math.floor(totalSec / 60);
+const sec = totalSec % 60;
+return ⁠${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}⁠;
+}
+function updateStopwatchDisplay() {
+document.getElementById('stopwatchDisplay').textContent = formatTime(timerSeconds);
+}
+function toggleTimer() {
+const btnText = document.getElementById('timerPlayText');
+const btnIcon = document.getElementById('timerPlayIcon');
+if (isTimerRunning) {
+clearInterval(timerInterval);
+isTimerRunning = false;
+btnText.textContent = "再開";
+btnIcon.setAttribute('data-lucide', 'play');
+} else {
+isTimerRunning = true;
+btnText.textContent = "一時停止";
+btnIcon.setAttribute('data-lucide', 'pause');
+timerInterval = setInterval(() => {
+timerSeconds++;
+updateStopwatchDisplay();
+}, 1000);
+}
+lucide.createIcons();
+}
+function resetTimer() {
+clearInterval(timerInterval);
+isTimerRunning = false;
+timerSeconds = 0;
+updateStopwatchDisplay();
+document.getElementById('timerPlayText').textContent = "スタート";
+document.getElementById('timerPlayIcon').setAttribute('data-lucide', 'play');
+document.getElementById('btn1stCrackVal').textContent = "--:--";
+document.getElementById('btn2ndCrackVal').textContent = "--:--";
+document.getElementById('btnTotalVal').textContent = "--:--";
+lucide.createIcons();
+}
+function record1stCrack() {
+const formatted = formatTime(timerSeconds);
+document.getElementById('firstCrackTime').value = formatted;
+document.getElementById('btn1stCrackVal').textContent = formatted;
+showToast('1ハゼ時間を記録しました');
+}
+function record2ndCrack() {
+const formatted = formatTime(timerSeconds);
+document.getElementById('secondCrackTime').value = formatted;
+document.getElementById('btn2ndCrackVal').textContent = formatted;
+showToast('2ハゼ時間を記録しました');
+}
+function recordTotalTime() {
+const min = Math.floor(timerSeconds / 60);
+const sec = timerSeconds % 60;
+document.getElementById('roastTimeMin').value = min;
+document.getElementById('roastTimeSec').value = sec;
+const formatted = formatTime(timerSeconds);
+document.getElementById('btnTotalVal').textContent = formatted;
+if (isTimerRunning) {
+toggleTimer();
+}
+showToast('総焙煎時間を記録しました');
+}
+function calculateLossRate() {
+const gw = parseFloat(greenWeightInput.value);
+const rw = parseFloat(roastedWeightInput.value);
+if (!isNaN(gw) && !isNaN(rw) && gw > 0) {
+const rate = ((gw - rw) / gw) * 100;
+lossRateDisplay.textContent = ⁠${rate.toFixed(1)} %⁠;
+} else {
+lossRateDisplay.textContent = ⁠0.0 %⁠;
+}
+}
+// 写真アップロード時に自動でリサイズ・圧縮
+function handlePhotoUpload(e) {
+const file = e.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = function(event) {
+const img = new Image();
+img.onload = function() {
+const canvas = document.createElement('canvas');
+const MAX_WIDTH = 600;
+const MAX_HEIGHT = 600;
+let width = img.width;
+let height = img.height;
+if (width > height) {
+if (width > MAX_WIDTH) {
+height *= MAX_WIDTH / width;
+width = MAX_WIDTH;
+}
+} else {
+if (height > MAX_HEIGHT) {
+width *= MAX_HEIGHT / height;
+height = MAX_HEIGHT;
+}
+}
+canvas.width = width;
+canvas.height = height;
+const ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0, width, height);
+currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+photoPreview.src = currentPhotoBase64;
+photoPreviewContainer.classList.remove('hidden');
+};
+img.src = event.target.result;
+};
+reader.readAsDataURL(file);
+}
+function removePhoto() {
+currentPhotoBase64 = null;
+photoInput.value = '';
+photoPreview.src = '';
+photoPreviewContainer.classList.add('hidden');
+}
+function openLogModal(logToEdit = null) {
+logForm.reset();
+currentPhotoBase64 = null;
+removePhoto();
+resetTimer();
+document.getElementById('roastDate').value = new Date().toISOString().split('T')[0];
+if (logToEdit) {
+modalTitle.textContent = "焙煎記録を編集";
+editingLogId.value = logToEdit.id;
+document.getElementById('roastDate').value = logToEdit.date || '';
+document.getElementById('beanName').value = logToEdit.beanName || '';
+document.getElementById('origin').value = logToEdit.origin || '';
+document.getElementById('process').value = logToEdit.process || 'ウォッシュド (Washed)';
+document.getElementById('roaster').value = logToEdit.roaster || '';
+document.getElementById('roastLevel').value = logToEdit.roastLevel || 'medium';
+document.getElementById('greenWeight').value = logToEdit.greenWeight || '';
+document.getElementById('roastedWeight').value = logToEdit.roastedWeight || '';
+document.getElementById('roastTimeMin').value = logToEdit.roastTimeMin || '';
+document.getElementById('roastTimeSec').value = logToEdit.roastTimeSec || '';
+document.getElementById('firstCrackTime').value = logToEdit.firstCrackTime || '';
+document.getElementById('secondCrackTime').value = logToEdit.secondCrackTime || '';
+document.getElementById('flavorAcidity').value = logToEdit.flavorAcidity || '3';
+document.getElementById('flavorBitterness').value = logToEdit.flavorBitterness || '3';
+document.getElementById('flavorSweetness').value = logToEdit.flavorSweetness || '3';
+document.getElementById('flavorNotes').value = logToEdit.flavorNotes || '';
+document.getElementById('memo').value = logToEdit.memo || '';
+if (logToEdit.photo) {
+currentPhotoBase64 = logToEdit.photo;
+photoPreview.src = currentPhotoBase64;
+photoPreviewContainer.classList.remove('hidden');
+}
+calculateLossRate();
+} else {
+modalTitle.textContent = "新規焙煎記録";
+editingLogId.value = '';
+}
+logModal.classList.remove('opacity-0', 'pointer-events-none');
+modalContainer.classList.remove('scale-95');
+modalContainer.classList.add('scale-100');
+}
+function closeLogModal() {
+resetTimer();
+modalContainer.classList.remove('scale-100');
+modalContainer.classList.add('scale-95');
+logModal.classList.add('opacity-0', 'pointer-events-none');
+}
+function openDetailModal(id) {
+selectedLogId = id;
+const log = logs.find(l => l.id === id);
+if (!log) return;
+const levelLabels = { light: '浅煎り', medium: '中煎り', dark: '深煎り' };
+const gw = parseFloat(log.greenWeight) || 0;
+const rw = parseFloat(log.roastedWeight) || 0;
+const loss = gw > 0 ? (((gw - rw) / gw) * 100).toFixed(1) : '0.0';
+detailModalBody.innerHTML = ⁠${log.photo ?⁠<div class="w-full h-48 rounded-2xl overflow-hidden shadow-sm border border-amber-100"><img src="${log.photo}" class="w-full h-full object-cover"></div>` : ''}
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="text-xs bg-amber-200/80 text-amber-900 px-2.5 py-0.5 rounded-full font-bold">￼
+￼{log.date}</span>
+</div>
+<h3 class="text-lg font-bold text-amber-950">${log.beanName}</h3>
+${log.origin ? ⁠<p class="text-xs text-amber-800/80">産地: ${log.origin} / 精製: ${log.process}</p>⁠ : ''}
+</div>
+<div class="grid grid-cols-2 gap-3 bg-amber-50/70 p-3 rounded-2xl border border-amber-100 text-xs">
+<div><span class="text-amber-800/70">生豆重量:</span> <strong class="font-mono-num">￼
+￼{log.roastedWeight || '-'} g</strong></div>
+<div><span class="text-amber-800/70">減量率:</span> <strong class="font-mono-num text-amber-900">￼
+￼{log.roastTimeMin || 0}分${log.roastTimeSec || 0}秒</strong></div>
+<div><span class="text-amber-800/70">1ハゼ:</span> <strong class="font-mono-num">￼
+￼{log.secondCrackTime || '-'}</strong></div>
+</div>
+<div class="space-y-1.5 text-xs bg-white p-3 rounded-2xl border border-amber-100">
+<div class="font-bold text-amber-900 mb-1">カッピング評価</div>
+<div class="flex justify-between"><span>酸味:</span> <span class="font-bold text-amber-800">★ ${log.flavorAcidity}/5</span></div>
+<div class="flex justify-between"><span>苦味:</span> <span class="font-bold text-amber-800">★ ${log.flavorBitterness}/5</span></div>
+<div class="flex justify-between"><span>甘味:</span> <span class="font-bold text-amber-800">★ ${log.flavorSweetness}/5</span></div>
+${log.flavorNotes ? ⁠<div class="pt-1 border-t border-amber-100 mt-1"><span class="text-amber-800/70">フレーバー:</span> ${log.flavorNotes}</div>⁠ : ''}
+</div>
+${log.memo ? ⁠<div class="text-xs bg-amber-50/50 p-3 rounded-2xl border border-amber-100 space-y-1"><div class="font-bold text-amber-900">焙煎メモ</div><p class="text-amber-950 whitespace-pre-wrap leading-relaxed">${log.memo}</p></div>⁠ : ''}
+`;
+detailModal.classList.remove('opacity-0', 'pointer-events-none');
+detailModalContainer.classList.remove('scale-95');
+detailModalContainer.classList.add('scale-100');
+}
+function closeDetailModal() {
+detailModalContainer.classList.remove('scale-100');
+detailModalContainer.classList.add('scale-95');
+detailModal.classList.add('opacity-0', 'pointer-events-none');
+}
+function handleFormSubmit(e) {
+e.preventDefault();
+const id = editingLogId.value ? Number(editingLogId.value) : Date.now();
+const logData = {
+id,
+date: document.getElementById('roastDate').value,
+beanName: document.getElementById('beanName').value,
+origin: document.getElementById('origin').value,
+process: document.getElementById('process').value,
+roaster: document.getElementById('roaster').value,
+roastLevel: document.getElementById('roastLevel').value,
+greenWeight: document.getElementById('greenWeight').value,
+roastedWeight: document.getElementById('roastedWeight').value,
+roastTimeMin: document.getElementById('roastTimeMin').value,
+roastTimeSec: document.getElementById('roastTimeSec').value,
+firstCrackTime: document.getElementById('firstCrackTime').value,
+secondCrackTime: document.getElementById('secondCrackTime').value,
+flavorAcidity: document.getElementById('flavorAcidity').value,
+flavorBitterness: document.getElementById('flavorBitterness').value,
+flavorSweetness: document.getElementById('flavorSweetness').value,
+flavorNotes: document.getElementById('flavorNotes').value,
+memo: document.getElementById('memo').value,
+photo: currentPhotoBase64
+};
+if (editingLogId.value) {
+logs = logs.map(l => l.id === id ? logData : l);
+} else {
+logs.unshift(logData);
+}
+const success = saveToLocalStorage();
+if (success) {
+closeLogModal();
+renderLogs();
+showToast('焙煎記録を保存しました');
+}
+}
+function saveToLocalStorage() {
+try {
+localStorage.setItem('roast_note_logs', JSON.stringify(logs));
+return true;
+} catch (e) {
+console.error(e);
+alert('保存に失敗しました。写真のファイルサイズが大きすぎるか、ブラウザの保存容量が一杯になっています。写真なしで保存するか、古いログを削除してください。');
+return false;
+}
+}
+window.deleteLogById = function(id, event) {
+if (event) event.stopPropagation();
+showConfirm('この焙煎ログを削除してもよろしいですか？', () => {
+logs = logs.filter(l => l.id !== id);
+saveToLocalStorage();
+closeDetailModal();
+renderLogs();
+showToast('ログを削除しました');
+});
+};
+window.openDetail = openDetailModal;
+function renderLogs() {
+let filtered = logs.filter(log => {
+const matchesFilter = activeFilter === 'all' || log.roastLevel === activeFilter;
+const matchesSearch = !activeSearch ||
+log.beanName.toLowerCase().includes(activeSearch) ||
+(log.origin && log.origin.toLowerCase().includes(activeSearch)) ||
+(log.flavorNotes && log.flavorNotes.toLowerCase().includes(activeSearch));
+return matchesFilter && matchesSearch;
+});
+logCountBadge.textContent = ⁠${filtered.length}件⁠;
+if (filtered.length === 0) {
+logsGrid.innerHTML = '';
+emptyState.classList.remove('hidden');
+return;
+}
+emptyState.classList.add('hidden');
+const levelLabels = { light: '浅煎り', medium: '中煎り', dark: '深煎り' };
+const levelColors = {
+light: 'bg-amber-100 text-amber-800 border-amber-200',
+medium: 'bg-amber-700 text-amber-50 border-amber-600',
+dark: 'bg-amber-950 text-amber-200 border-amber-900'
+};
+logsGrid.innerHTML = filtered.map(log => {
+const gw = parseFloat(log.greenWeight) || 0;
+const rw = parseFloat(log.roastedWeight) || 0;
+const loss = gw > 0 ? (((gw - rw) / gw) * 100).toFixed(1) : '0.0';
+return ⁠<div onclick="window.openDetail(${log.id})" class="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col justify-between space-y-3 relative group"> <div class="flex items-start justify-between gap-2"> <div class="space-y-1 pr-2 overflow-hidden"> <div class="flex items-center gap-2"> <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border ${levelColors[log.roastLevel] || levelColors.medium}">${levelLabels[log.roastLevel] || '中煎り'}</span> <span class="text-xs text-amber-700/80">${log.date}</span> </div> <h3 class="font-bold text-amber-950 text-sm sm:text-base leading-snug truncate">${log.beanName}</h3> ${log.origin ?⁠<p class="text-xs text-amber-800/80 truncate">${log.origin}</p>⁠: ''} </div> <div class="flex items-start gap-2 shrink-0"> ${log.photo ?⁠<div class="w-16 h-16 rounded-xl overflow-hidden border border-amber-100 shadow-sm"><img src="${log.photo}" class="w-full h-full object-cover"></div>` : ''}
+<button type="button" onclick="window.deleteLogById(${log.id}, event)" class="w-7 h-7 rounded-full bg-amber-50 hover:bg-red-100 text-amber-700 hover:text-red-600 flex items-center justify-center transition border border-amber-200/60 shadow-sm shrink-0" title="削除">
+<i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 bg-amber-50/60 p-2.5 rounded-xl text-center text-xs border border-amber-100/50">
+<div>
+<span class="block text-[10px] text-amber-800/70">生豆 / 焙煎後</span>
+<strong class="font-mono-num text-amber-950">￼
+￼
+￼
+￼
+￼
+￼
+￼
+￼
+￼{log.roastTimeMin || 0}分${log.roastTimeSec || 0}秒</strong>
+</div>
+</div>
+${log.flavorNotes ? ⁠<div class="text-[11px] text-amber-800 bg-amber-50/80 px-2.5 py-1 rounded-lg truncate">☕ ${log.flavorNotes}</div>⁠ : ''}
+</div>
+`;
+}).join('');
+lucide.createIcons();
+}
+function showToast(message) {
+const toast = document.getElementById('toast');
+document.getElementById('toastMessage').textContent = message;
+toast.classList.remove('translate-y-20', 'opacity-0');
+setTimeout(() => {
+toast.classList.add('translate-y-20', 'opacity-0');
+}, 3000);
+}
+</script>
 </body>
 </html>
