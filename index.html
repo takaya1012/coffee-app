@@ -197,11 +197,22 @@
                 <input type="text" id="roaster" placeholder="例: GENE CAFE / 手網" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm">
               </div>
               <div>
-                <label class="block text-xs font-medium text-amber-900/80 mb-1">焙煎度合い</label>
+                <label class="block text-xs font-medium text-amber-900/80 mb-1">焙煎度合い (8段階)</label>
                 <select id="roastLevel" class="w-full p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-600/50 text-sm bg-white">
-                  <option value="light">浅煎り (Light)</option>
-                  <option value="medium" selected>中煎り (Medium)</option>
-                  <option value="dark">深煎り (Dark)</option>
+                  <optgroup label="浅煎り (Light)">
+                    <option value="light">ライトロースト (極浅煎り)</option>
+                    <option value="cinnamon">シナモンロースト (浅煎り)</option>
+                  </optgroup>
+                  <optgroup label="中煎り (Medium)">
+                    <option value="medium" selected>ミディアムロースト (中浅煎り)</option>
+                    <option value="high">ハイロースト (中煎り)</option>
+                    <option value="city">シティロースト (中深煎り)</option>
+                  </optgroup>
+                  <optgroup label="深煎り (Dark)">
+                    <option value="fullcity">フルシティロースト (深煎り)</option>
+                    <option value="french">フレンチロースト (極深煎り)</option>
+                    <option value="italian">イタリアンロースト (最深煎り)</option>
+                  </optgroup>
                 </select>
               </div>
             </div>
@@ -432,6 +443,18 @@
     let isTimerRunning = false;
     let confirmCallback = null;
 
+    // 焙煎度のデータ定義
+    const roastLevelMap = {
+      light: { label: 'ライトロースト', category: 'light', colorClass: 'bg-amber-100 text-amber-800 border-amber-200' },
+      cinnamon: { label: 'シナモンロースト', category: 'light', colorClass: 'bg-amber-100 text-amber-800 border-amber-200' },
+      medium: { label: 'ミディアムロースト', category: 'medium', colorClass: 'bg-amber-600 text-amber-50 border-amber-500' },
+      high: { label: 'ハイロースト', category: 'medium', colorClass: 'bg-amber-700 text-amber-50 border-amber-600' },
+      city: { label: 'シティロースト', category: 'medium', colorClass: 'bg-amber-800 text-amber-50 border-amber-700' },
+      fullcity: { label: 'フルシティロースト', category: 'dark', colorClass: 'bg-amber-900 text-amber-100 border-amber-800' },
+      french: { label: 'フレンチロースト', category: 'dark', colorClass: 'bg-amber-950 text-amber-200 border-amber-900' },
+      italian: { label: 'イタリアンロースト', category: 'dark', colorClass: 'bg-neutral-900 text-amber-200 border-black' }
+    };
+
     const logsGrid = document.getElementById('logsGrid');
     const emptyState = document.getElementById('emptyState');
     const logCountBadge = document.getElementById('logCountBadge');
@@ -474,6 +497,16 @@
       renderLogs();
       setupEventListeners();
     });
+
+    function getRoastInfo(levelKey) {
+      if (roastLevelMap[levelKey]) {
+        return roastLevelMap[levelKey];
+      }
+      // 互換性フォールバック（以前の light / medium / dark データ対応）
+      if (levelKey === 'light') return { label: '浅煎り', category: 'light', colorClass: 'bg-amber-100 text-amber-800 border-amber-200' };
+      if (levelKey === 'dark') return { label: '深煎り', category: 'dark', colorClass: 'bg-amber-950 text-amber-200 border-amber-900' };
+      return { label: '中煎り', category: 'medium', colorClass: 'bg-amber-700 text-amber-50 border-amber-600' };
+    }
 
     function showConfirm(message, onOk) {
       confirmMessage.textContent = message;
@@ -658,7 +691,7 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 400; // 容量オーバーを防ぐため最大サイズを400pxに最適化
+          const MAX_WIDTH = 400;
           const MAX_HEIGHT = 400;
           let width = img.width;
           let height = img.height;
@@ -753,7 +786,7 @@
       const log = logs.find(l => l.id === id);
       if (!log) return;
 
-      const levelLabels = { light: '浅煎り', medium: '中煎り', dark: '深煎り' };
+      const roastInfo = getRoastInfo(log.roastLevel);
       const gw = parseFloat(log.greenWeight) || 0;
       const rw = parseFloat(log.roastedWeight) || 0;
       const loss = gw > 0 ? (((gw - rw) / gw) * 100).toFixed(1) : '0.0';
@@ -763,7 +796,7 @@
         
         <div class="space-y-1">
           <div class="flex items-center gap-2">
-            <span class="text-xs bg-amber-200/80 text-amber-900 px-2.5 py-0.5 rounded-full font-bold">${levelLabels[log.roastLevel] || '中煎り'}</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full font-bold ${roastInfo.colorClass}">${roastInfo.label}</span>
             <span class="text-xs text-amber-700/80">${log.date}</span>
           </div>
           <h3 class="text-lg font-bold text-amber-950">${log.beanName}</h3>
@@ -847,7 +880,6 @@
         return true;
       } catch (e) {
         console.error("Storage Error:", e);
-        // 写真容量が多すぎる場合は写真のみを除外して保存を試みる fallback 処理
         try {
           const strippedLogs = logs.map(item => ({ ...item, photo: null }));
           localStorage.setItem('roast_note_logs', JSON.stringify(strippedLogs));
@@ -875,11 +907,13 @@
 
     function renderLogs() {
       let filtered = logs.filter(log => {
-        const matchesFilter = activeFilter === 'all' || log.roastLevel === activeFilter;
+        const roastInfo = getRoastInfo(log.roastLevel);
+        const matchesFilter = activeFilter === 'all' || roastInfo.category === activeFilter;
         const matchesSearch = !activeSearch || 
           (log.beanName && log.beanName.toLowerCase().includes(activeSearch)) || 
           (log.origin && log.origin.toLowerCase().includes(activeSearch)) ||
-          (log.flavorNotes && log.flavorNotes.toLowerCase().includes(activeSearch));
+          (log.flavorNotes && log.flavorNotes.toLowerCase().includes(activeSearch)) ||
+          (roastInfo.label && roastInfo.label.toLowerCase().includes(activeSearch));
         return matchesFilter && matchesSearch;
       });
 
@@ -892,14 +926,9 @@
       }
 
       emptyState.classList.add('hidden');
-      const levelLabels = { light: '浅煎り', medium: '中煎り', dark: '深煎り' };
-      const levelColors = {
-        light: 'bg-amber-100 text-amber-800 border-amber-200',
-        medium: 'bg-amber-700 text-amber-50 border-amber-600',
-        dark: 'bg-amber-950 text-amber-200 border-amber-900'
-      };
 
       logsGrid.innerHTML = filtered.map(log => {
+        const roastInfo = getRoastInfo(log.roastLevel);
         const gw = parseFloat(log.greenWeight) || 0;
         const rw = parseFloat(log.roastedWeight) || 0;
         const loss = gw > 0 ? (((gw - rw) / gw) * 100).toFixed(1) : '0.0';
@@ -909,7 +938,7 @@
             <div class="flex items-start justify-between gap-2">
               <div class="space-y-1 pr-2 overflow-hidden">
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border ${levelColors[log.roastLevel] || levelColors.medium}">${levelLabels[log.roastLevel] || '中煎り'}</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-bold border ${roastInfo.colorClass}">${roastInfo.label}</span>
                   <span class="text-xs text-amber-700/80">${log.date}</span>
                 </div>
                 <h3 class="font-bold text-amber-950 text-sm sm:text-base leading-snug truncate">${log.beanName}</h3>
